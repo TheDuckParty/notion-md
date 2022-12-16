@@ -19,7 +19,7 @@ def get_image(block):
     with open(f"{args.static}/{filename}", "wb") as file:
         file.write(image_data)
     image_path = f"/images/{filename}"
-    return f"![]({image_path})"
+    return f"![]({image_path}#center)"
 
 
 def parse_annotations(annotations, text):
