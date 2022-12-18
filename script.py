@@ -125,20 +125,20 @@ def query_db(db_id):
     url = f"https://api.notion.com/v1/databases/{db_id}/query"
     response = requests.post(url, headers=headers).json()
     for item in response["results"]:
-        if item["properties"]["Published"]["checkbox"]:
-            if args.hugo:
+        if args.hugo:
+            if item["properties"]["Published"]["checkbox"]:
                 result[item["id"]] = parse_frontmatter(item["properties"])
-            else :
-                result[item["id"]] = ""
+        else :
+            result[item["id"]] = ""
     while response["has_more"]:
         data = {"start_cursor": response["next_cursor"]}
         response = requests.post(url, headers=headers, data=data).json()
         for item in response["results"]:
-            if item["properties"]["Published"]["checkbox"]:
-                if args.hugo:
+            if args.hugo:
+                if item["properties"]["Published"]["checkbox"]:
                     result[item["id"]] = parse_frontmatter(item["properties"])
-                else :
-                    result[item["id"]] = ""
+            else :
+                result[item["id"]] = ""
     return result
 
 
