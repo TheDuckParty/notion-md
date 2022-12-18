@@ -7,10 +7,6 @@ import os
 from multiprocessing import Pool
 
 
-def jprint(data):
-    print(json.dumps(data, indent=4, sort_keys=True))
-
-
 # PaperMod don't show image's caption
 def get_image(block):
     url = block["content"]["file"]["url"]
@@ -18,7 +14,7 @@ def get_image(block):
     image_data = requests.get(url).content
     with open(f"{args.static}/{filename}", "wb") as file:
         file.write(image_data)
-    image_path = f"/images/{filename}"
+    image_path = os.path.join(args.url, filename)
     return f"![]({image_path}#center)"
 
 
@@ -115,13 +111,13 @@ def query_blocks(page_id, start_cursor=None, blocks=None):
 
 
 def parse_frontmatter(properties):
-    return {
+    return json.dumps({
         "categories": [item["name"] for item in properties["Categories"]["multi_select"]],
         "date": properties["Date"]["date"]["start"],
         "tags": [item["name"] for item in properties["Tags"]["multi_select"]],
         "title": properties["Title"]["title"][0]["plain_text"],
         "url": properties["URL"]["url"]
-    }
+    })
 
 
 def query_db(db_id):
@@ -130,13 +126,19 @@ def query_db(db_id):
     response = requests.post(url, headers=headers).json()
     for item in response["results"]:
         if item["properties"]["Published"]["checkbox"]:
-            result[item["id"]] = parse_frontmatter(item["properties"])
+            if args.hugo:
+                result[item["id"]] = parse_frontmatter(item["properties"])
+            else :
+                result[item["id"]] = ""
     while response["has_more"]:
         data = {"start_cursor": response["next_cursor"]}
         response = requests.post(url, headers=headers, data=data).json()
         for item in response["results"]:
             if item["properties"]["Published"]["checkbox"]:
-                result[item["id"]] = parse_frontmatter(item["properties"])
+                if args.hugo:
+                    result[item["id"]] = parse_frontmatter(item["properties"])
+                else :
+                    result[item["id"]] = ""
     return result
 
 
@@ -146,7 +148,7 @@ def multi_thread(page_items):
     blocks = query_blocks(page_id)
     content = render_page(blocks, 0)
     with open(f"{args.content}/{page_id}.md", "w") as file:
-        file.write(json.dumps(frontmatter))
+        file.write(frontmatter)
         file.write(content)
 
 
@@ -156,26 +158,17 @@ def valid_dir(target):
     raise argparse.ArgumentTypeError(f"The directory '{target}' does not exist")
 
 
-def create_folder():
-    args.content = os.path.join(args.content, "posts")
-    args.static = os.path.join(args.static, "images")
-    if not os.path.exists(args.content):
-        os.mkdir(args.content)
-    if not os.path.exists(args.static):
-        os.mkdir(args.static)
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Get Notion pages from specified database and convert it to Markdown")
 
-    parser.add_argument("--static", type=valid_dir, help="static path folder in Hugo's project tree", required=True)
-    parser.add_argument("--content", type=valid_dir, help="content path folder in Hugo's project tree", required=True)
+    parser.add_argument("--static", type=valid_dir, help="static path folder", required=True)
+    parser.add_argument("--url", type=str, help="URL for static files", required=True)
+    parser.add_argument("--content", type=valid_dir, help="content path folder", required=True)
     parser.add_argument("--db", type=str, help="database ID", required=True)
     parser.add_argument("--key", type=str, help="Notion API key", required=True)
+    parser.add_argument("--hugo", action=argparse.BooleanOptionalAction, help="add page front matter for Hugo")
 
     args = parser.parse_args()
-
-    create_folder()
 
     headers = {
         "accept": "application/json",
