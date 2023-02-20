@@ -5,7 +5,6 @@ import argparse
 import os
 
 from multiprocessing import Pool
-from pprint import pprint
 
 
 # PaperMod don't show image's caption
@@ -118,7 +117,7 @@ def parse_frontmatter(properties):
         "tags": [item["name"] for item in properties["Tags"]["multi_select"]],
         "title": properties["Title"]["title"][0]["plain_text"],
         "url": properties["URL"]["url"],
-        "summary": properties["Summary"]["rich_text"][0]["plain_text"]
+        "summary": properties["Summary"]["rich_text"][0]["plain_text"] if properties["Summary"]["rich_text"] else ""
     })
 
 
