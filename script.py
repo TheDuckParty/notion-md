@@ -76,10 +76,17 @@ def parse_block_type(block, numbered_list_index, depth, args):
         return "---"
     if block["type"] == "image":
         return get_image(block, args)
-    if block["type"] == "video":
-        return get_video(block, args)
     if block["type"] == "embed":
         return get_embed(block)
+
+    if block_type == "video":
+        video_content_type = block["content"].get("type")
+        if video_content_type == "file":
+            return get_video(block, args)
+        elif video_content_type == "external":
+            url = block["content"]["external"]["url"]
+            fake_embed_block = {"content": {"url": url}}
+            return get_embed(fake_embed_block)
 
     if "rich_text" not in block["content"] or not block["content"]["rich_text"]:
         return ""
