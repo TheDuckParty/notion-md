@@ -78,8 +78,7 @@ def parse_block_type(block, numbered_list_index, depth, args):
         return get_image(block, args)
     if block["type"] == "embed":
         return get_embed(block)
-
-    if block_type == "video":
+    if block["type"] == "video":
         video_content_type = block["content"].get("type")
         if video_content_type == "file":
             return get_video(block, args)
